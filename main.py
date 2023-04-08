@@ -6,31 +6,34 @@ from itertools import count
 from terminaltables import AsciiTable
 
 
-def get_vacancies(language):
+def get_vacancies_statistics_hh(language):
     url = "https://api.hh.ru/vacancies"
     page = 0
     pages_number = 1
     salaries = []
-    while page < pages_number:
-        payload = {"text": language, "area": 1, "page": page}
+    area_id = 1
+    while page < pages_number and page < 101:
+        payload = {"text": language, "area": area_id, "page": page}
         response = requests.get(url, params=payload)
         response.raise_for_status()
-        pages_number = response.json()["pages"]
-        vacancies_found = response.json()["found"]
+        response_content = response.json()
+        pages_number = response_content["pages"]
+        vacancies_found = response_content["found"]
         page += 1
-        pprint(page)
-        for vacancy in response.json()["items"]:
+        for vacancy in response_content["items"]:
             if vacancy["salary"]:
                 salary_from = vacancy["salary"]["from"]
                 salary_to = vacancy["salary"]["to"]
                 currency = vacancy["salary"]["currency"]
                 exp_salary = predict_salary(salary_from, salary_to, currency)
-                if exp_salary:
-                    salaries .append(exp_salary)
-                    processed_salaries = len(salaries)
-                    average_salary = sum(salaries) / len(salaries)
-                else:
-                    processed_salaries, average_salary = (0, 0)
+                if not exp_salary:
+                    continue
+                salaries .append(exp_salary)
+    processed_salaries = len(salaries)
+    if processed_salaries:
+        average_salary = sum(salaries) / len(salaries)
+    else:
+        processed_salaries, average_salary = (0, 0)
     return {
         "vacancies_found": vacancies_found,
         "processed_salaries": processed_salaries,
@@ -38,7 +41,7 @@ def get_vacancies(language):
     }
 
 
-def predict_salary(salary_from, salary_to, currency):
+def predict_salary_statistics(salary_from, salary_to, currency):
     if currency != "RUR" and currency != "rub":
         return
     if salary_from and salary_to:
@@ -50,7 +53,7 @@ def predict_salary(salary_from, salary_to, currency):
     return expected_salary
 
 
-def get_vacancies_sj(sj_key, language):
+def get_vacancies_statistics_sj(sj_key, language):
     salaries = []
     page_count = count(start=0, step=1)
     headers = {"X-Api-App-Id": sj_key}
@@ -63,12 +66,11 @@ def get_vacancies_sj(sj_key, language):
         }
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
-        result = response.json()
-        vacancies_found = result["total"]
+        response_content = response.json()
+        vacancies_found = response_content["total"]
         page += 1
-        result_items = result["objects"]
-        for item in result_items:
-            pprint(item["profession"])
+        vacancies = response_content["objects"]
+        for item in vacancies:
             salary_from = item["payment_from"]
             salary_to = item["payment_to"]
             currency = item["currency"]
@@ -80,7 +82,7 @@ def get_vacancies_sj(sj_key, language):
             average_salary = sum(salaries) // len(salaries)
         else:
             average_salary = 0
-        if not result["more"]:
+        if not response_content["more"]:
             break
     return {
         "vacancies_found": vacancies_found,
@@ -120,7 +122,7 @@ if __name__ == "__main__":
 
     languages = ["python", "javascript", "java"]
     for language in languages:
-    #    language_params_hh[language] = get_vacancies(language)
-        language_params_sj[language] = get_vacancies_sj(sj_key, language)
+        language_params_hh[language] = get_vacancies_statistics_hh(language)
+        language_params_sj[language] = get_vacancies_statistics_sj(sj_key, language)
     print_table(language_params_hh, "HH MOSCOW")
     print_table(language_params_sj, "SJ MOSCOW")
