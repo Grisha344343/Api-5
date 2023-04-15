@@ -74,7 +74,7 @@ def get_vacancies_statistics_sj(sj_key, language):
             salary_from = item["payment_from"]
             salary_to = item["payment_to"]
             currency = item["currency"]
-            exp_salary = predict_salary_statistics(salary_from, salary_to, currency)
+            exp_salary = predict_rub_salary(salary_from, salary_to, currency)
             if exp_salary:
                 salaries.append(exp_salary)
         if not response_content["more"]:
