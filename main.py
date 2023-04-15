@@ -25,10 +25,10 @@ def get_vacancies_statistics_hh(language):
                 salary_from = vacancy["salary"]["from"]
                 salary_to = vacancy["salary"]["to"]
                 currency = vacancy["salary"]["currency"]
-                exp_salary = predict_salary(salary_from, salary_to, currency)
+                exp_salary = predict_rub_salary(salary_from, salary_to, currency)
                 if not exp_salary:
                     continue
-                salaries .append(exp_salary)
+                salaries.append(exp_salary)
     processed_salaries = len(salaries)
     if processed_salaries:
         average_salary = sum(salaries) / len(salaries)
@@ -41,7 +41,7 @@ def get_vacancies_statistics_hh(language):
     }
 
 
-def predict_salary_statistics(salary_from, salary_to, currency):
+def predict_rub_salary(salary_from, salary_to, currency):
     if currency != "RUR" and currency != "rub":
         return
     if salary_from and salary_to:
@@ -74,16 +74,16 @@ def get_vacancies_statistics_sj(sj_key, language):
             salary_from = item["payment_from"]
             salary_to = item["payment_to"]
             currency = item["currency"]
-            exp_salary = predict_salary(salary_from, salary_to, currency)
+            exp_salary = predict_salary_statistics(salary_from, salary_to, currency)
             if exp_salary:
                 salaries.append(exp_salary)
-        processed_salaries = len(salaries)
-        if processed_salaries:
-            average_salary = sum(salaries) // len(salaries)
-        else:
-            average_salary = 0
         if not response_content["more"]:
             break
+    processed_salaries = len(salaries)
+    if processed_salaries:
+        average_salary = sum(salaries) // len(salaries)
+    else:
+        average_salary = 0
     return {
         "vacancies_found": vacancies_found,
         "processed_salaries": processed_salaries,
