@@ -12,7 +12,7 @@ def get_vacancies_statistics_hh(language):
     pages_number = 1
     salaries = []
     area_id = 1
-    while page < pages_number and page < 101:
+    while page < pages_number:
         payload = {"text": language, "area": area_id, "page": page}
         response = requests.get(url, params=payload)
         response.raise_for_status()
@@ -21,14 +21,15 @@ def get_vacancies_statistics_hh(language):
         vacancies_found = response_content["found"]
         page += 1
         for vacancy in response_content["items"]:
-            if vacancy["salary"]:
-                salary_from = vacancy["salary"]["from"]
-                salary_to = vacancy["salary"]["to"]
-                currency = vacancy["salary"]["currency"]
-                exp_salary = predict_rub_salary(salary_from, salary_to, currency)
-                if not exp_salary:
-                    continue
-                salaries.append(exp_salary)
+            if not vacancy["salary"]:
+                continue
+            salary_from = vacancy["salary"]["from"]
+            salary_to = vacancy["salary"]["to"]
+            currency = vacancy["salary"]["currency"]
+            exp_salary = predict_rub_salary(salary_from, salary_to, currency)
+            if not exp_salary:
+                continue
+            salaries.append(exp_salary)
     processed_salaries = len(salaries)
     if processed_salaries:
         average_salary = sum(salaries) / len(salaries)
@@ -70,10 +71,10 @@ def get_vacancies_statistics_sj(sj_key, language):
         vacancies_found = response_content["total"]
         page += 1
         vacancies = response_content["objects"]
-        for item in vacancies:
-            salary_from = item["payment_from"]
-            salary_to = item["payment_to"]
-            currency = item["currency"]
+        for vacancy in vacancies:
+            salary_from = vacancy["payment_from"]
+            salary_to = vacancy["payment_to"]
+            currency = vacancy["currency"]
             exp_salary = predict_rub_salary(salary_from, salary_to, currency)
             if exp_salary:
                 salaries.append(exp_salary)
@@ -92,7 +93,7 @@ def get_vacancies_statistics_sj(sj_key, language):
 
 
 def print_table(popular_langs, title):
-    table_data = [
+    table_payload = [
         (
             "Язык программирования",
             "Вакансий найдено",
@@ -101,14 +102,14 @@ def print_table(popular_langs, title):
         )
     ]
     for lang in popular_langs:
-        lang_list = (
+        lang_params = (
             lang,
             popular_langs[lang]["vacancies_found"],
             popular_langs[lang]["processed_salaries"],
             popular_langs[lang]["average_salary"]
         )
-        table_data.append(lang_list)
-    table = AsciiTable(table_data, title)
+        table_payload.append(lang_params)
+    table = AsciiTable(table_payload, title)
     print(table.table)
 
 
